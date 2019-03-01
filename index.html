@@ -211,6 +211,7 @@
                                         <input type="number" class="form-control" name="numberOfNodes" step="1" value="16" />
                                     </div>
                                     <input type="range" class="form-control col-4" name="betweenNodesInLayer" min="0" max="100" step="1" value="20" style="position: relative; top: -4px;">
+<input type="checkbox" id="drawDots" name="drawDots" value="drawDots" checked><label for="drawDots">Draw dots</label>
                                 </div>
                                 <div class="row entry">
                                     <div class="input-group mb-2 mr-sm-2 col-4">
@@ -306,6 +307,7 @@ $("#showBias").change(                function() { fcnn.redraw({'showBias_': thi
 $("#showLabels").change(              function() { fcnn.redraw({'showLabels_': this.checked}) });
 $("#showArrowheads").change(          function() { fcnn.style({'showArrowheads_': this.checked}) });
 $("#arrowhead input:radio").change(   function() { fcnn.style({'arrowheadStyle_': this.value}) });
+$("#drawDots").change(                function() { fcnn.redraw({'drawDots_': this.checked}); fcnn.redistribute(); });
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -45,11 +45,12 @@ function FCNN() {
     var showLabels = true;
     var showArrowheads = false;
     var arrowheadStyle = "empty";
+    var drawDots = true;
 
     let sup_map = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'};
     let sup = (s) => Array.prototype.map.call(s, (d) => (d in sup_map && sup_map[d]) || d).join('');
 
-    let textFn = (layer_index, layer_width) => ((layer_index === 0 ? "Input" : (layer_index === architecture.length-1 ? "Output" : "Hidden")) + " Layer ∈ ℝ" + sup(layer_width.toString()));
+    let textFn = (layer_index, layer_width) => ((layer_index === 0 ? "Eingabes" : (layer_index === architecture.length-1 ? "Ausgabes" : "Innere S")) + "chicht ∈ ℝ" + sup(layer_width.toString()));
     var nominal_text_size = 12;
     var textWidth = 70;
 
@@ -114,19 +115,21 @@ function FCNN() {
                    .style("font-size", nominal_text_size+"px")
                    .merge(text)
                    .text(function(d) { return (showLabels ? d.text : ""); });
-
         style();
     }
 
     function redistribute({betweenNodesInLayer_=betweenNodesInLayer,
                            betweenLayers_=betweenLayers,
-                           nnDirection_=nnDirection}={}) {
+                           nnDirection_=nnDirection,
+                           drawDots_=drawDots}={}) {
 
         betweenNodesInLayer = betweenNodesInLayer_;
         betweenLayers = betweenLayers_;
         nnDirection = nnDirection_;
+        drawDots = drawDots_;
 
-        layer_widths = architecture.map((layer_width, i) => layer_width * nodeDiameter + (layer_width - 1) * betweenNodesInLayer[i])
+
+        layer_widths = architecture.map((layer_width, i) => layer_width * nodeDiameter + (layer_width - 1) * betweenNodesInLayer[i] + (drawDots && i == 0 ? 70 : 0))
 
         largest_layer_width = Math.max(...layer_widths);
 
@@ -135,7 +138,7 @@ function FCNN() {
         let indices_from_id = (id) => id.split('_').map(x => parseInt(x));
 
         let x = (layer, node_index) => layer * (betweenLayers + nodeDiameter) + w/2 - (betweenLayers * layer_offsets.length/3);
-        let y = (layer, node_index) => layer_offsets[layer] + node_index * (nodeDiameter + betweenNodesInLayer[layer]) + h/2 - largest_layer_width/2;
+        let y = (layer, node_index) => layer_offsets[layer] + node_index * (nodeDiameter + betweenNodesInLayer[layer]) + h/2 - largest_layer_width/2 + ((drawDots && node_index >= architecture[0] / 2 && layer == 0) ? 70 : 0);
 
         let xt = (layer, node_index) => layer_offsets[layer] + node_index * (nodeDiameter + betweenNodesInLayer[layer]) + w/2  - largest_layer_width/2;
         let yt = (layer, node_index) => layer * (betweenLayers + nodeDiameter) + h/2 - (betweenLayers * layer_offsets.length/3);
