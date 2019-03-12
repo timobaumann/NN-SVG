@@ -45,7 +45,7 @@ function FCNN() {
     var showLabels = true;
     var showArrowheads = false;
     var arrowheadStyle = "empty";
-    var drawDots = true;
+    var drawDots = false;
 
     let sup_map = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'};
     let sup = (s) => Array.prototype.map.call(s, (d) => (d in sup_map && sup_map[d]) || d).join('');
@@ -75,11 +75,13 @@ function FCNN() {
 
     function redraw({architecture_=architecture,
                      showBias_=showBias,
-                     showLabels_=showLabels}={}) {
+                     showLabels_=showLabels,
+                     drawDots_=drawDots}={}) {
 
         architecture = architecture_;
         showBias = showBias_;
         showLabels = showLabels_;
+        drawDots = drawDots_;
 
         graph.nodes = architecture.map((layer_width, layer_index) => range(layer_width).map(node_index => {return {'id':layer_index+'_'+node_index,'layer':layer_index,'node_index':node_index}}));
         graph.links = pairWise(graph.nodes).map((nodes) => nodes[0].map(left => nodes[1].map(right => {return right.node_index >= 0 ? {'id':left.id+'-'+right.id, 'source':left.id,'target':right.id,'weight':randomWeight()} : null })));
@@ -120,13 +122,11 @@ function FCNN() {
 
     function redistribute({betweenNodesInLayer_=betweenNodesInLayer,
                            betweenLayers_=betweenLayers,
-                           nnDirection_=nnDirection,
-                           drawDots_=drawDots}={}) {
+                           nnDirection_=nnDirection}={}) {
 
         betweenNodesInLayer = betweenNodesInLayer_;
         betweenLayers = betweenLayers_;
         nnDirection = nnDirection_;
-        drawDots = drawDots_;
 
 
         layer_widths = architecture.map((layer_width, i) => layer_width * nodeDiameter + (layer_width - 1) * betweenNodesInLayer[i] + (drawDots && i == 0 ? 70 : 0))
