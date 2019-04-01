@@ -17,3 +17,19 @@ Array.prototype.last = function() { return this[this.length - 1]; };
 
 let flatten = (array) => array.reduce((flat, toFlatten) => (flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten)), []);
 
+let sigmoid = (t) => 1/(1+Math.pow(Math.E, -t));
+
+//let localize = s => s; // for English
+/** for German */
+let localize = function(s) {
+    var translations = {
+        "Input Layer": "Eingabeschicht",
+        "Output Layer": "Ausgabeschicht",
+        "Hidden Layer": "Innere Schicht"
+    };
+    if (s in translations)
+        return translations[s];
+    else
+        console.log("no translation for " + s);
+        return s;
+}/**/

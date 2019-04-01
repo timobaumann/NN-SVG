@@ -1,12 +1,15 @@
 
 function FCNN() {
 
-    let randomWeight = () => Math.random() * 2 - 1;
-
+    let randomEdgeWeight = () => Math.random() * 4 - 2; // scaled [-1..+1]
+    let randomNodeActivation = () => Math.random(); // scaled [0..1]
 
     /////////////////////////////////////////////////////////////////////////////
                           ///////    Variables    ///////
     /////////////////////////////////////////////////////////////////////////////
+
+    var inputActivationStore = false;
+    var weightStore = false;
 
     var w = window.innerWidth;
     var h = window.innerHeight;
@@ -20,18 +23,19 @@ function FCNN() {
     var weightedEdgeWidth = d3.scaleLinear().domain([0, 1]).range([0, edgeWidth]);
 
     var edgeOpacityProportional = false;
-    var edgeOpacity = 1.0
+    var edgeOpacity = 1.0;
     var weightedEdgeOpacity = d3.scaleLinear().domain([0, 1]).range([0, 1]);
 
     var edgeColorProportional = false;
     var defaultEdgeColor = "#505050";
     var negativeEdgeColor = "#0000ff";
     var positiveEdgeColor = "#ff0000";
-    var weightedEdgeColor = d3.scaleLinear().domain([-1, 0, 1]).range([negativeEdgeColor, "white", positiveEdgeColor]);
+    var weightedEdgeColor = d3.scaleLinear().domain([-2, 0, 2]).range([negativeEdgeColor, "white", positiveEdgeColor]);
 
     var nodeDiameter = 20;
     var nodeColor = "#ffffff";
     var nodeBorderColor = "#333333";
+    var weightedNodeColor = d3.scaleLinear().domain([0, 1]).range(["white", nodeColor]);
 
     var betweenLayers = 160;
 
@@ -50,7 +54,7 @@ function FCNN() {
     let sup_map = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'};
     let sup = (s) => Array.prototype.map.call(s, (d) => (d in sup_map && sup_map[d]) || d).join('');
 
-    let textFn = (layer_index, layer_width) => ((layer_index === 0 ? "Eingabes" : (layer_index === architecture.length-1 ? "Ausgabes" : "Innere S")) + "chicht ∈ ℝ" + sup(layer_width.toString()));
+    let textFn = (layer_index, layer_width) => ((layer_index === 0 ? localize("Input Layer") : (layer_index === architecture.length-1 ? localize("Output Layer") : localize("Hidden Layer"))) + localize(" ∈ ℝ") + sup(layer_width.toString()));
     var nominal_text_size = 12;
     var textWidth = 70;
 
@@ -73,6 +77,13 @@ function FCNN() {
                           ///////    Methods    ///////
     /////////////////////////////////////////////////////////////////////////////
 
+    /** compute activation of n given other nodes and links */
+    function computeActivation(n) {
+        let prevLayer = n.layer - 1;
+        let inputs = range(graph.nodes[prevLayer].length).map((i) => graph.nodes[prevLayer][i].activation * graph.links[prevLayer][i][n.node_index].weight);
+        return sigmoid(sum(inputs));
+    }
+
     function redraw({architecture_=architecture,
                      showBias_=showBias,
                      showLabels_=showLabels,
@@ -83,8 +94,37 @@ function FCNN() {
         showLabels = showLabels_;
         drawDots = drawDots_;
 
-        graph.nodes = architecture.map((layer_width, layer_index) => range(layer_width).map(node_index => {return {'id':layer_index+'_'+node_index,'layer':layer_index,'node_index':node_index}}));
-        graph.links = pairWise(graph.nodes).map((nodes) => nodes[0].map(left => nodes[1].map(right => {return right.node_index >= 0 ? {'id':left.id+'-'+right.id, 'source':left.id,'target':right.id,'weight':randomWeight()} : null })));
+        graph.nodes = architecture.map(
+            (layer_width, layer_index) => range(layer_width).map(
+                node_index => {
+                    return {'id': layer_index + '_' + node_index, 'layer': layer_index, 'node_index': node_index}
+                })
+        );
+        var i = 0;
+        graph.links = pairWise(graph.nodes).map(
+            (nodes) => nodes[0].map(
+                left => nodes[1].map(
+                    right => {
+                        return right.node_index >= 0 ? {
+                            'id': left.id + '-' + right.id,
+                            'source': left.id,
+                            'target': right.id,
+                            'weight': this.weightStore ? this.weightStore[i++].weight : randomEdgeWeight()
+                        } : null
+                    }
+                )));
+
+        if (this.inputActivationStore) {
+            for (var i = 0; i < graph.nodes[0].length; i++) {
+                graph.nodes[0][i].activation = this.inputActivationStore[i].activation
+            }
+        } else {
+            graph.nodes[0].forEach((n) => n.activation = randomNodeActivation());
+        }
+        this.inputActivationStore = false;
+        for (var i = 1; i < graph.nodes.length; i++) {
+            graph.nodes[i].forEach((n) => n.activation=computeActivation(n));
+        }
         graph.nodes = flatten(graph.nodes);
         graph.links = flatten(graph.links).filter(l => (l && (showBias ? (parseInt(l['target'].split('_')[0]) !== architecture.length-1 ? (l['target'].split('_')[1] !== '0') : true) : true)));
 
@@ -105,7 +145,7 @@ function FCNN() {
                    .attr("class", "node")
                    .attr("id", function(d) { return d.id; })
                    .on("mousedown", set_focus)
-                   .on("mouseup", remove_focus)
+                   .on("mouseup", remove_focus)//.append("title").text(function(n) { return "" + n.activation; })
                    .merge(node);
 
         text = text.data(label, d => d.id);
@@ -191,6 +231,7 @@ function FCNN() {
         // Arrowheads
         showArrowheads          = showArrowheads_;
         arrowheadStyle          = arrowheadStyle_;
+        weightedNodeColor       = d3.scaleLinear().domain([0, 1]).range(["white", nodeColor]);
 
         link.style("stroke-width", function(d) {
             if (edgeWidthProportional) { return weightedEdgeWidth(Math.abs(d.weight)); } else { return edgeWidth; }
@@ -209,7 +250,7 @@ function FCNN() {
         arrowhead.style("fill", arrowheadStyle === 'empty' ? "none" : defaultEdgeColor);
 
         node.attr("r", nodeDiameter/2);
-        node.style("fill", nodeColor);
+        node.style("fill", function(n) { return weightedNodeColor(n.activation); });
         node.style("stroke", nodeBorderColor);
 
     }

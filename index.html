@@ -246,6 +246,7 @@
 
                             <hr>
                             <button type="button" class="btn btn-sm btn-secondary" id="newRandomWeights">New Random Weights</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="newRandomInputs">New Random Inputs</button>
 
                         </div>
                     </div>
@@ -349,8 +350,22 @@ $(document).on('change', "input[name='betweenNodesInLayer']", restart);  // fix 
 $(document).on('click', '#newRandomWeights', function() {
     link = fcnn.link.data([]);
     fcnn.link.exit().remove();
+    fcnn.weightStore = false;
+    fcnn.inputActivationStore = fcnn.graph.nodes;
     restart();
 });
+
+$(document).on('click', '#newRandomInputs', function() {
+    link = fcnn.link.data([]);
+    fcnn.link.exit().remove();
+    fcnn.weightStore = fcnn.graph.links;
+    fcnn.inputActivationStore = false;
+    restart();
+});
+
+/*$(document).on('click', '#newRandomInputs', function() {
+
+});*/
 
 d3.select("#download").on("click", function() {
     // ga('send', 'event', 'downloadSVG', 'FCNN');
